@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -24,6 +24,27 @@ async function run() {
             res.send(users);
         });
 
+        app.get('/users/:id', async (req, res) => {
+            const query = { _id: ObjectId(req.params.id) };
+            const user = await userCollection.findOne(query);
+            res.send(user);
+        });
+
+        app.put('/users/:id', async (req, res) => {
+            const filter = { _id: ObjectId(req.params.id) };
+            const user = req.body;
+            const options = { upsert: true };
+            const updateUser = {
+                $set: {
+                    name: user.name,
+                    address: user.address,
+                    email: user.email,
+                }
+            };
+            const result = await userCollection.updateOne(filter, updateUser, options);
+            res.send(result);
+        });
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             console.log(user);
@@ -33,8 +54,10 @@ async function run() {
 
         app.delete ('/users/:id', async (req, res) => {
             const id = req.params.id;
-            const user = req.body;
-            console.log(`delete user with id: ${id}`);
+            const query = { _id: ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
+            console.log(`delete user with id: ${id}`, result);
+            res.send(result);
         })
     }
     finally {
